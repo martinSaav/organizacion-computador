@@ -1,0 +1,27 @@
+*.o
+*.lst
+*.out
+test
+
+# Otras reglas comunes que podrías querer incluir:
+# Ignorar archivos de configuración de tu sistema operativo
+.DS_Store
+Thumbs.db
+
+# Ignorar archivos de configuración de editores/IDEs
+.vscode/
+.idea/
+
+# Ignorar archivos de compilación y directorios temporales
+build/
+tmp/
+out/
+
+# Ignorar archivos binarios generados
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Ignorar archivos de registro
+*.log
