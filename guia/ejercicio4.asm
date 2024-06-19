@@ -35,17 +35,19 @@ extern sscanf
 section .data
     msgEntradaValores db "Ingrese el valor del numero %lld: ",10,0
     numFormato db "%lld",0
+    indiceNum dq 0
+    indice dq 0
 section .bss
     numStr resb 500
-    num resq 1
-
-
+    numVector times 15 resq 1
 section .text
     global main
 main:
 
-    mPuts msgEntradaX
+    mSscanf msgEntradaValores,numFormato,numStr
     mGets xStr
+
+    
 
     mSscanf xStr,numFormato,x
 
