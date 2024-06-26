@@ -24,6 +24,14 @@
     add     rsp,8
 %endmacro
 
+%macro mPrintf 2
+    mov     rdi,%1
+    mov     rsi,%2
+    sub     rsp,8
+    call    printf
+    add     rsp,8
+%endmacro
+
 
 global main
 
@@ -36,21 +44,93 @@ section .data
     msgEntradaValores db "Ingrese el valor del numero %lld: ",10,0
     numFormato db "%lld",0
     indiceNum dq 0
-    indice dq 0
+    tamVector dq 3
+    tamVectorAux dq 3
 section .bss
     numStr resb 500
     numVector times 15 resq 1
+    bytesCopiar resq 1
+    num resq 1
+    rsiAux resq 1
+
 section .text
     global main
 main:
 
-    mSscanf msgEntradaValores,numFormato,numStr
-    mGets xStr
+ingresarOrdenado:
+    mov     rax, [tamVectorAux]
+    cmp     rax, 0
+    je      fin
 
-    
+    sub     rsp,8
+    call    ingresoValores
+    add     rsp,8
 
-    mSscanf xStr,numFormato,x
+    sub     rsp,8
+    call    algoritmo
+    add     rsp,8
 
+    mov     rax, [tamVectorAux]
+    dec     rax
+    mov     [tamVectorAux], rax
+    jmp     ingresarOrdenado
 
+ingresoValores:
+    mov     rax, [indiceNum] 
+    add     rax, 1
+    mPrintf msgEntradaValores, rax
+    mGets   numStr
+    mSscanf numStr, numFormato, num
+    ret
+
+algoritmo:
+    mov     rsi, 0
+iteracionVector: 
+    mov     rcx, [indiceNum]
+    cmp     rcx, 0
+    je      finAlgoritmo
+    mov     rax, [num]
+    cmp     rax, [numVector + rsi*8]
+    jg      finAlgoritmo
+    dec     rcx
+    inc     rsi
+    jmp     iteracionVector
+finAlgoritmo:
+    mov    rbx, rsi
+    mov    rcx, [indiceNum]
+    sub    rcx, rbx
+    ;mov    rax, rsi ; guardo el indice en rax
+    lea    rsi, [numVector + rbx*8]
+    lea    rdi, [numVector + rbx*8 + 8]
+    rep movsb
+
+    ;copio el numero en la posicion correcta
+    mov    rax, [num]
+    mov    [numVector + rbx*8], rax
+
+   ;aumento el indice
+    mov    rax, [indiceNum]
+    inc    rax
+    mov    [indiceNum], rax
+    ret
+
+fin:
+    mov     rsi, 0
+    mov     rcx, [tamVector]
+    mov     [rsiAux], rsi
+imprimirVector:
+    cmp     rcx, 0
+    je      finPrograma
+    mov     rax, [numVector + rsi*8]
+    mPrintf numFormato, rax
+    mov     rsi, [rsiAux]
+    inc     rsi
+    mov     [rsiAux], rsi
+    dec     rcx
+    jmp     imprimirVector
+
+finPrograma:
 
     ret
+
+
