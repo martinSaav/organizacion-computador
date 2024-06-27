@@ -46,13 +46,14 @@ section .data
     indiceNum dq 0
     tamVector dq 3
     tamVectorAux dq 3
+    saltoLinea db 10,0
+    mensajeOrdenado db "El vector ordenado de forma decreciente es: ",10,0
 section .bss
     numStr resb 500
     numVector times 15 resq 1
-    bytesCopiar resq 1
     num resq 1
     rsiAux resq 1
-
+    rcxAux resq 1
 section .text
     global main
 main:
@@ -101,8 +102,8 @@ finAlgoritmo:
     sub    rcx, rbx
     ;mov    rax, rsi ; guardo el indice en rax
     lea    rsi, [numVector + rbx*8]
-    lea    rdi, [numVector + rbx*8 + 8]
-    rep movsb
+    lea    rdi, [numVector + (rbx + 1)*8]
+    rep movsq
 
     ;copio el numero en la posicion correcta
     mov    rax, [num]
@@ -118,18 +119,28 @@ fin:
     mov     rsi, 0
     mov     rcx, [tamVector]
     mov     [rsiAux], rsi
+    mov     [rcxAux], rcx
+    ;mPuts   mensajeOrdenado
+
 imprimirVector:
     cmp     rcx, 0
     je      finPrograma
     mov     rax, [numVector + rsi*8]
     mPrintf numFormato, rax
+    
     mov     rsi, [rsiAux]
     inc     rsi
     mov     [rsiAux], rsi
+
+    mov     rcx, [rcxAux]
     dec     rcx
+    mov     [rcxAux], rcx
+
     jmp     imprimirVector
 
 finPrograma:
+    ;mPuts   saltoLinea
+
 
     ret
 
