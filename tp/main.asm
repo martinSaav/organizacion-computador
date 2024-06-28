@@ -266,6 +266,7 @@ moverFicha:
     add r8, [ubicacionZorro]
     mov byte[r8], 'X'
 
+    mClear
     mPuts mapa
     jmp fin
     ;jmp main
