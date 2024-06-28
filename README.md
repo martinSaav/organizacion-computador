@@ -5,18 +5,29 @@ gcc -no-pie -o test test.o
 
 
 
-fin:
-    mov     rsi, 0
-    mov     rcx, [tamVector]
-    jmp     imprimirVector
+x/1xb &direccion
+x/3gb a
+x/1s
 
-imprimirVector:
-    cmp     rcx, 0
-    je      finPrograma
-    mov     rax, [numVector + rsi*8]
-    mPrintf numFormato, rax
-    inc     rsi
-    dec     rcx
-    jmp     imprimirVector
+   mClear
+    mPuts  mapaPrint
+    mov    rsi, 0
+    mov    rsi, 44
+    lea    rax, [mapaPrint]
+    mov    dl, [rax + rsi]
+    mov    [caracter], dl
+    mov    [rsiAux], rsi
+    mPuts  caracter
 
-finPrograma:
+    lea    rax, [mapaPrint]
+    mov    rsi, [rsiAux]
+    add    rsi, [tamFila]
+    mov    dl, [rax + rsi]
+    mov    [caracter], dl
+    mPuts  caracter
+
+    lea    rax, [mapaPrint]
+    mov    rsi, 176
+    mov    dl, [rax + rsi]
+    mov    [caracter], dl
+    mPuts  caracter
