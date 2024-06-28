@@ -97,30 +97,34 @@ section .data
     zorro db "X",0
     oca db "O",0
     vacio db " ",0
-    mapa db "    0   1   2   3   4   5   6  ",10 ;32
-         db "0         | O | O | O |        ",10 ;64
-         db "1         | O | O | O |        ",10 ;96
-         db "2 | O | O | O | O | O | O | O |",10 ;128
-         db "3 | O |   |   |   |   |   | O |",10 ;160
-         db "4 | O |   |   | X |   |   | O |",10 ;192
-         db "5         |   |   |   |        ",10 ;224
-         db "6         |   |   |   |        ",10,0 ;256
+    mapa db "                               ",10 ;32
+         db "          | O | O | O |        ",10 ;64
+         db "          | O | O | O |        ",10 ;96
+         db "  | O | O | O | O | O | O | O |",10 ;128
+         db "  | O |   |   |   |   |   | O |",10 ;160
+         db "  | O |   |   | X |   |   | O |",10 ;192
+         db "          |   |   |   |        ",10 ;224
+         db "          |   |   |   |        ",10,0 ;256
     ;estructura del tipo: posicion con respecto al mapa de bytes, contenido, posicion con respecto al mapa del juego
-    estructura db                       "044O02",0,"048O03",0,"052O04",0
-               db                       "076O12",0,"080O13",0,"084O14",0
-               db "100O20",0,"104O21",0,"108O22",0,"112O23",0,"116O24",0,"120O25",0,"124O26",0
-               db "132O30",0,"136 31",0,"140 32",0,"144 33",0,"148 34",0,"152 35",0,"156O36",0
-               db "164O40",0,"168 41",0,"172 42",0,"176X43",0,"180 44",0,"184 45",0,"188O46",0
-               db                       "204 52",0,"208 53",0,"212 54",0
-               db                       "236 62",0,"240 63",0,"244 64",0
+    estructura db                   "044O",0,"048O",0,"052O",0
+               db                   "076O",0,"080O",0,"084O",0
+               db "100O",0,"104O",0,"108O",0,"112O",0,"116O",0,"120O",0,"124O",0
+               db "132O",0,"136 ",0,"140 ",0,"144 ",0,"148",0,"152 ",0,"156O",0
+               db "164O",0,"168 ",0,"172 ",0,"176X",0,"180 ",0,"184 ",0,"188O",0
+               db                   "204 ",0,"208 ",0,"212 ",0
+               db                   "236 ",0,"240 ",0,"244 ",0
     cmdClear                 db "clear",0
-    caracter                 db "  ",0
     ocasRestantesParaGanar   db 12
     tamFila                  dq 32
     msgTurnoZorro            db "Turno del zorro",10,0
     msgSeleccionCasilla      db "Los movimientos del zorro son: norte(N), sur(S), este(E), oeste(O), noreste(NE), noroeste(NO), sureste(SE), suroeste(SO)",10,0
-    movimientos              db "N S E O NENOSESO",0
-    movimientosDisponibles   db "                   ",0
+    movimientos              db "N",0,"S",0,"E",0,"O",0,"NE",0,"NO",0,"SE",0,"SO",0
+    movimientosDisponibles   db " ",0," ",0," ",0," ",0,"  ",0,"  ",0,"  ",0,"  ",0,0
+    posMovimientosDisponibles dq 0, 2, 4, 6, 8, 11, 14, 17
+    tamMovimientosDisponibles dq 1, 1, 1, 1, 2, 2, 2, 2
+    msgMovimientosDisponibles db "Los movimientos disponibles son: "
+    movimientosDisponiblesPrint   db "                   ",10
+    msgIngresoMovimiento     db "Ingrese el movimiento a realizar: ",0
     indiceMovimiento         dq 0
     cantidadMovimientos      dq 8
     msgMovimientoNoValido    db "Movimiento no valido",10,0
@@ -129,6 +133,8 @@ section .data
     movimientosValores       dq 32, -32, 4, -4, -28, -36, 36, 28
     ubicacionZorro           dq 176
 section .bss
+    movimientoIngresado resb 256
+    tamMovimientoIngresado resq 1
     raxAux resq 1
     rbxAux resq 1
     rcxAux resq 1
@@ -161,41 +167,95 @@ verMovimientosDisponibles:
     mov rbx, [movimientosValores + rsi*8]
 
     sub rsp, 8
-    call esValidoMovimiento
+    call esMovimientoDisponible
     add rsp, 8
 
     inc rsi
     mov [indiceMovimiento], rsi
     loop verMovimientosDisponibles
+    jmp copiarMovimientosDisponibles
+continuar:
     jmp fin
 
-esValidoMovimiento:
+esMovimientoDisponible:
     mGuardarValorRegistrosGenerales
     mov rcx, 1
     lea rsi, [r8 + rbx]
     lea rdi, [vacio]
     repe cmpsb
     mov rsi, [indiceMovimiento]
-    je movValido
-volverEsValidoMovimiento:
+    je copiarMovimientoDisponible
+volverEsMovimientoDisponible:
     mRestaurarValorRegistrosGenerales
     ret
 
-movValido:
-    mov rcx, 2
-    mov rax, rsi
-    lea rsi, [movimientos + rax*2]
-    lea rdi, [movimientosDisponibles + rax*2]
+copiarMovimientoDisponible:
+    mov rcx, [tamMovimientosDisponibles + rsi*8]
+    mov rax, [posMovimientosDisponibles + rsi*8]
+    lea rsi, [movimientos + rax]
+    lea rdi, [movimientosDisponibles + rax]
     rep movsb
-    jmp volverEsValidoMovimiento
+    jmp volverEsMovimientoDisponible
+
+copiarMovimientosDisponibles:
+    lea rsi, [movimientosDisponibles]  
+    lea rdi, [movimientosDisponiblesPrint]        
+copiar:
+    mov al, [rsi]
+    cmp al, 0
+    je agregarEspacio
+    mov [rdi], al                     
+    inc rdi
+    inc rsi
+    jmp copiar
+
+agregarEspacio:
+    inc rsi
+    cmp byte [rsi], 0       
+    je  continuar
+    mov byte [rdi], ' '
+    inc rdi
+    jmp copiar
+
+verficarEsMovimientoValido:
+    ; primero verifico el tamaño del movimiento ingresado
+    mov rsi, 0
+    jmp tamMovIngresado
+verificarTamMovimientoIngresado:
+    mov rax, [tamMovimientoIngresado]
+    cmp rax, 2
+    jg movimientoNoValido
+    mov rsi, 0
+verificarIncluidoEnMovimientosDisponibles:
+    mov r9, rsi
+    mov rcx, [tamMovimientosDisponibles + rsi*8]
+    mov rax, [posMovimientosDisponibles + rsi*8]
+    lea rsi, [movimientoIngresado]
+    lea rdi, [movimientosDisponibles + rax]
+    repe cmpsb
+    je fin
+    mov rsi, r9
+    inc rsi
+    cmp rsi, [cantidadMovimientos]
+    je movimientoNoValido
+    jmp verificarIncluidoEnMovimientosDisponibles 
+    
+tamMovIngresado:
+    cmp byte[movimientoIngresado+rsi],0 
+    je finalString
+    inc rsi
+    jmp tamMovIngresado
+
+finalString:
+    mov [tamMovimientoIngresado],rsi
+    jmp  verificarTamMovimientoIngresado
+
+movimientoNoValido:
+    mPuts msgMovimientoNoValido
+    jmp fin
 
 moverFicha:
-    mGuardarValorRegistrosGenerales
-    mov rsi, [indiceMovimiento]
-    mov rax, [movimientosValores + rsi*8]
-    add [ubicacionZorro], rax
-    mRestaurarValorRegistrosGenerales
-    ret
+
     
 guardarValorRegistrosGenerales:
     mov [raxAux], rax
@@ -233,7 +293,9 @@ restaurarValorRegistrosGenerales:
 
 
 fin:
-    mPuts movimientosDisponibles
+    mPuts msgMovimientosDisponibles
+    mGets movimientoIngresado
+    jmp verficarEsMovimientoValido
 
     ret
 
