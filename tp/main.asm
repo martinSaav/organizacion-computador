@@ -130,7 +130,7 @@ section .data
     msgMovimientoNoValido    db "Movimiento no valido",10,0
     tamMsgMovimientoNoValido dq 22
     msgSinMovimientos        db "No hay mas movimientos disponibles",10,0
-    movimientosValores       dq 32, -32, 4, -4, -28, -36, 36, 28
+    movimientosValores       dq -32, 32, 4, -4, -28, -36, 36, 28
     ubicacionZorro           dq 176
 section .bss
     movimientoIngresado resb 256
@@ -211,9 +211,9 @@ copiar:
 
 agregarEspacio:
     inc rsi
-    cmp byte [rsi], 0       
+    cmp byte[rsi], 0       
     je  continuar
-    mov byte [rdi], ' '
+    mov byte[rdi], ' '
     inc rdi
     jmp copiar
 
@@ -228,13 +228,14 @@ verificarTamMovimientoIngresado:
     mov rsi, 0
 verificarIncluidoEnMovimientosDisponibles:
     mov r9, rsi
-    mov rcx, [tamMovimientosDisponibles + rsi*8]
+    mov rcx, [tamMovimientoIngresado]
     mov rax, [posMovimientosDisponibles + rsi*8]
+    ;mov r10, [movimientosValores + rsi*8]
     lea rsi, [movimientoIngresado]
     lea rdi, [movimientosDisponibles + rax]
     repe cmpsb
-    je fin
     mov rsi, r9
+    je moverFicha
     inc rsi
     cmp rsi, [cantidadMovimientos]
     je movimientoNoValido
@@ -255,6 +256,19 @@ movimientoNoValido:
     jmp fin
 
 moverFicha:
+    lea r8, [mapa]
+    add r8, [ubicacionZorro]
+    mov byte[r8], ' '
+    sub r8, [ubicacionZorro]
+
+    mov rax, [movimientosValores + rsi*8]
+    add [ubicacionZorro], rax
+    add r8, [ubicacionZorro]
+    mov byte[r8], 'X'
+
+    mPuts mapa
+    jmp fin
+    ;jmp main
 
     
 guardarValorRegistrosGenerales:
