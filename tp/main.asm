@@ -94,44 +94,54 @@ extern sscanf
 extern system
 
 section .data
-    zorro db "X",0
-    oca db "O",0
-    vacio db " ",0
-    mapa db "                               ",10 ;32
-         db "          | O | O | O |        ",10 ;64
-         db "          | O | O | O |        ",10 ;96
-         db "  | O | O | O | O | O | O | O |",10 ;128
-         db "  | O |   |   |   |   |   | O |",10 ;160
-         db "  | O |   |   | X |   |   | O |",10 ;192
-         db "          |   |   |   |        ",10 ;224
-         db "          |   |   |   |        ",10,0 ;256
+    zorro                       db "X",0
+    oca                         db "O",0
+    vacio                       db " ",0
+    mapa                        db "                               ",10 ;32
+                                db "          | O | O | O |        ",10 ;64
+                                db "          | O | O | O |        ",10 ;96
+                                db "  | O | O | O | O | O | O | O |",10 ;128
+                                db "  | O |   |   |   |   |   | O |",10 ;160
+                                db "  | O |   |   | X |   |   | O |",10 ;192
+                                db "          |   |   |   |        ",10 ;224
+                                db "          |   |   |   |        ",10,0 ;256
     ;estructura del tipo: posicion con respecto al mapa de bytes, contenido, posicion con respecto al mapa del juego
-    estructura db                   "044O",0,"048O",0,"052O",0
-               db                   "076O",0,"080O",0,"084O",0
-               db "100O",0,"104O",0,"108O",0,"112O",0,"116O",0,"120O",0,"124O",0
-               db "132O",0,"136 ",0,"140 ",0,"144 ",0,"148",0,"152 ",0,"156O",0
-               db "164O",0,"168 ",0,"172 ",0,"176X",0,"180 ",0,"184 ",0,"188O",0
-               db                   "204 ",0,"208 ",0,"212 ",0
-               db                   "236 ",0,"240 ",0,"244 ",0
-    cmdClear                 db "clear",0
-    ocasRestantesParaGanar   db 12
-    tamFila                  dq 32
-    msgTurnoZorro            db "Turno del zorro",10,0
-    msgSeleccionCasilla      db "Los movimientos del zorro son: norte(N), sur(S), este(E), oeste(O), noreste(NE), noroeste(NO), sureste(SE), suroeste(SO)",10,0
-    movimientos              db "N",0,"S",0,"E",0,"O",0,"NE",0,"NO",0,"SE",0,"SO",0
-    movimientosDisponibles   db " ",0," ",0," ",0," ",0,"  ",0,"  ",0,"  ",0,"  ",0,0
-    posMovimientosDisponibles dq 0, 2, 4, 6, 8, 11, 14, 17
-    tamMovimientosDisponibles dq 1, 1, 1, 1, 2, 2, 2, 2
-    msgMovimientosDisponibles db "Los movimientos disponibles son: "
-    movimientosDisponiblesPrint   db "                   ",10
-    msgIngresoMovimiento     db "Ingrese el movimiento a realizar: ",0
-    indiceMovimiento         dq 0
-    cantidadMovimientos      dq 8
-    msgMovimientoNoValido    db "Movimiento no valido",10,0
-    tamMsgMovimientoNoValido dq 22
-    msgSinMovimientos        db "No hay mas movimientos disponibles",10,0
-    movimientosValores       dq -32, 32, 4, -4, -28, -36, 36, 28
-    ubicacionZorro           dq 176
+    estructura                  db                   "044O",0,"048O",0,"052O",0
+                                db                   "076O",0,"080O",0,"084O",0
+                                db "100O",0,"104O",0,"108O",0,"112O",0,"116O",0,"120O",0,"124O",0
+                                db "132O",0,"136 ",0,"140 ",0,"144 ",0,"148 ",0,"152 ",0,"156O",0
+                                db "164O",0,"168 ",0,"172 ",0,"176X",0,"180 ",0,"184 ",0,"188O",0
+                                db                   "204 ",0,"208 ",0,"212 ",0
+                                db                   "236 ",0,"240 ",0,"244 ",0
+    cmdClear                     db "clear",0
+    ocasRestantesParaGanar       db 12
+
+
+
+    msgTurnoZorro                db "Turno del zorro",10,0
+    msgSeleccionCasilla          db "Los movimientos del zorro son: norte(N), sur(S), este(E), oeste(O), noreste(NE), noroeste(NO), sureste(SE), suroeste(SO)",10,0
+    movimientos                  db "N",0,"S",0,"E",0,"O",0,"NE",0,"NO",0,"SE",0,"SO",0
+    movimientosDisponibles       db " ",0," ",0," ",0," ",0,"  ",0,"  ",0,"  ",0,"  ",0,0
+    posMovimientosDisponibles    dq 0, 2, 4, 6, 8, 11, 14, 17
+    tamMovimientosDisponibles    dq 1, 1, 1, 1, 2, 2, 2, 2
+    msgMovimientosDisponibles    db "Los movimientos disponibles son: "
+    movimientosDisponiblesPrint  db "                   ",10
+    msgIngresoMovimiento         db "Ingrese el movimiento a realizar: ",0
+    
+    msgTurnoOcas                 db "Turno de las ocas",10,0
+    msgSeleccionCasillaOcas      db "Las ocas se pueden mover hacia el sur(S), este(E), oeste(O)",10,0
+    msgSelecionOca               db "Seleccione la oca a mover: ",0
+
+
+
+    indiceMovimiento             dq 0
+    cantidadMovimientos          dq 8
+    msgMovimientoNoValido        db "Movimiento no valido",10,0
+    tamMsgMovimientoNoValido     dq 22
+    msgSinMovimientos            db "No hay mas movimientos disponibles",10,0
+    tamMsgSinMovimientos         dq 36
+    movimientosValores           dq -32, 32, 4, -4, -28, -36, 36, 28
+    ubicacionZorro               dq 176
 section .bss
     movimientoIngresado resb 256
     tamMovimientoIngresado resq 1
@@ -230,7 +240,6 @@ verificarIncluidoEnMovimientosDisponibles:
     mov r9, rsi
     mov rcx, [tamMovimientoIngresado]
     mov rax, [posMovimientosDisponibles + rsi*8]
-    ;mov r10, [movimientosValores + rsi*8]
     lea rsi, [movimientoIngresado]
     lea rdi, [movimientosDisponibles + rax]
     repe cmpsb
@@ -269,7 +278,6 @@ moverFicha:
     mClear
     mPuts mapa
     jmp fin
-    ;jmp main
 
     
 guardarValorRegistrosGenerales:
