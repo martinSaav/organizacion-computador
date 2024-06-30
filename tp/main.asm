@@ -117,34 +117,58 @@ section .data
     ocasRestantesParaGanar       db 12
 
 
-
-    msgTurnoZorro                db "Turno del zorro",10,0
-    msgSeleccionCasilla          db "Los movimientos del zorro son: norte(N), sur(S), este(E), oeste(O), noreste(NE), noroeste(NO), sureste(SE), suroeste(SO)",10,0
-    movimientos                  db "N",0,"S",0,"E",0,"O",0,"NE",0,"NO",0,"SE",0,"SO",0
-    movimientosDisponibles       db " ",0," ",0," ",0," ",0,"  ",0,"  ",0,"  ",0,"  ",0,0
-    posMovimientosDisponibles    dq 0, 2, 4, 6, 8, 11, 14, 17
-    tamMovimientosDisponibles    dq 1, 1, 1, 1, 2, 2, 2, 2
-    msgMovimientosDisponibles    db "Los movimientos disponibles son: "
-    movimientosDisponiblesPrint  db "                   ",10
-    msgIngresoMovimiento         db "Ingrese el movimiento a realizar: ",0
-    
-    msgTurnoOcas                 db "Turno de las ocas",10,0
-    msgSeleccionCasillaOcas      db "Las ocas se pueden mover hacia el sur(S), este(E), oeste(O)",10,0
-    msgSelecionOca               db "Seleccione la oca a mover: ",0
+    msgTurnoZorro                 db "Turno del zorro",10
+                                  db "Los movimientos del zorro son: norte(N), sur(S), este(E), oeste(O), noreste(NE), noroeste(NO), sureste(SE), suroeste(SO)",10,0
+    tamMsgTurnoZorro              dq 138
+    movimientosZorro              db "N",0,"S",0,"E",0,"O",0,"NE",0,"NO",0,"SE",0,"SO",0,0
+    movimientosZorroDisponibles   db " ",0," ",0," ",0," ",0,"  ",0,"  ",0,"  ",0,"  ",0,0
+    tamMovimientosZorro           dq 21
+    posMovimientosZorroDisponibles dq 0, 2, 4, 6, 8, 11, 14, 17
+    tamMovimientosZorroDisponibles dq 1, 1, 1, 1, 2, 2, 2, 2
+    movimientosZorroValores        dq -32, 32, 4, -4, -28, -36, 36, 28
+    cantidadMovimientosZorro       dq 8
 
 
+    msgTurnoOcas                  db "Turno de las ocas",10
+                                  db "Los movimientos de las ocas son: sur(S), este(E), oeste(O)",10
+                                  db "Seleccione la oca a mover: ",0
+    tamMsgTurnoOcas               dq 105
+    movimientosOcas               db "S",0,"E",0,"O",0,0
+    movimientosOcasDisponibles    db " ",0," ",0," ",0,0
+    tamMovimientosOcas            dq 7
+    posMovimientosOcasDisponibles dq 0, 2, 4
+    tamMovimientosOcasDisponibles dq 1, 1, 1
+    movimientosOcasValores        dq 32, 4, -4
+    cantidadMovimientosOcas       dq 3
+
+
+    msgMovimientosDisponibles     db "Los movimientos disponibles son: "
+    movimientosDisponiblesPrint   db "                   ",10
+    msgIngresoMovimiento          db "Ingrese el movimiento a realizar: ",0
 
     indiceMovimiento             dq 0
-    cantidadMovimientos          dq 8
     msgMovimientoNoValido        db "Movimiento no valido",10,0
     tamMsgMovimientoNoValido     dq 22
     msgSinMovimientos            db "No hay mas movimientos disponibles",10,0
     tamMsgSinMovimientos         dq 36
-    movimientosValores           dq -32, 32, 4, -4, -28, -36, 36, 28
+
+    turnoZorro                   dq 0
+    turnoOcas                    dq 1
+    siguienteTurno               dq 0
+
     ubicacionZorro               dq 176
+
 section .bss
     movimientoIngresado resb 256
     tamMovimientoIngresado resq 1
+    msgTurno resb 256
+    movimientos resb 256
+    movimientosDisponibles resb 256
+    ;tamMovimientos resq 1
+    posMovimientosDisponibles resq 8
+    tamMovimientosDisponibles resq 8
+    movimientosValores resq 8
+    cantidadMovimientos resq 1
     raxAux resq 1
     rbxAux resq 1
     rcxAux resq 1
@@ -162,14 +186,103 @@ section .bss
 section .text
     global main
 main:
+    xor rax, rax
+    lea rdi, [movimientosDisponiblesPrint]
+    mov rcx, 19
+    mov al, ' '  
+    rep stosb   
+    mov rax, [turnoZorro]
+    cmp rax, [siguienteTurno]
+    je esTurnoZorro
+    jmp esTurnoOcas
+
+esTurnoZorro:
+    mov rcx, [tamMsgTurnoZorro]
+    lea rsi, [msgTurnoZorro]
+    lea rdi, [msgTurno]
+    rep movsb
+
+    mov rcx, [tamMovimientosZorro]
+    lea rsi, [movimientosZorro]
+    lea rdi, [movimientos]
+    rep movsb
+
+    mov rcx, [tamMovimientosZorro]
+    lea rsi, [movimientosZorroDisponibles]
+    lea rdi, [movimientosDisponibles]
+    rep movsb
+
+    mov rcx, [cantidadMovimientosZorro]
+    lea rsi, [posMovimientosZorroDisponibles]
+    lea rdi, [posMovimientosDisponibles]
+    rep movsq
+
+    mov rcx, [cantidadMovimientosZorro]
+    lea rsi, [tamMovimientosZorroDisponibles]
+    lea rdi, [tamMovimientosDisponibles]
+    rep movsq
+
+    mov rcx, [cantidadMovimientosZorro]
+    lea rsi, [movimientosZorroValores]
+    lea rdi, [movimientosValores]
+    rep movsq
+
+    mov rax, [cantidadMovimientosZorro]
+    mov [cantidadMovimientos], rax
+
+    mov rax, [turnoOcas]
+    mov [siguienteTurno], rax
+
+    jmp comienzoTurno
+
+esTurnoOcas:
+    mov rcx, [tamMsgTurnoOcas]
+    lea rsi, [msgTurnoOcas]
+    lea rdi, [msgTurno]
+    rep movsb
+
+    mov rcx, [tamMovimientosOcas]
+    lea rsi, [movimientosOcas]
+    lea rdi, [movimientos]
+    rep movsb
+
+    mov rcx, [tamMovimientosOcas]
+    lea rsi, [movimientosOcasDisponibles]
+    lea rdi, [movimientosDisponibles]
+    rep movsb
+
+    mov rcx, [cantidadMovimientosOcas]
+    lea rsi, [posMovimientosOcasDisponibles]
+    lea rdi, [posMovimientosDisponibles]
+    rep movsq
+
+    mov rcx, [cantidadMovimientosOcas]
+    lea rsi, [tamMovimientosOcasDisponibles]
+    lea rdi, [tamMovimientosDisponibles]
+    rep movsq
+
+    mov rcx, [cantidadMovimientosOcas]
+    lea rsi, [movimientosOcasValores]
+    lea rdi, [movimientosValores]
+    rep movsq
+
+    mov rax, [cantidadMovimientosOcas]
+    mov [cantidadMovimientos], rax
+
+    mov rax, [turnoZorro]
+    mov [siguienteTurno], rax
+
+    jmp comienzoTurno
+
+
+comienzoTurno:
     mClear
     mPuts  mapa
-    mPuts  msgTurnoZorro
-    mPuts  msgSeleccionCasilla
-
+    mPuts  msgTurno
     mov rcx, [cantidadMovimientos]
     mov rax, 0
-    mov rsi, [indiceMovimiento]
+    mov rsi, 0
+    mov [indiceMovimiento], rsi
     lea r8, [mapa]
     add r8, [ubicacionZorro]
 verMovimientosDisponibles:
@@ -185,7 +298,9 @@ verMovimientosDisponibles:
     loop verMovimientosDisponibles
     jmp copiarMovimientosDisponibles
 continuar:
-    jmp fin
+    mPuts msgMovimientosDisponibles
+    mGets movimientoIngresado
+    jmp verficarEsMovimientoValido
 
 esMovimientoDisponible:
     mGuardarValorRegistrosGenerales
@@ -262,7 +377,7 @@ finalString:
 
 movimientoNoValido:
     mPuts msgMovimientoNoValido
-    jmp fin
+    jmp continuar
 
 moverFicha:
     lea r8, [mapa]
@@ -275,9 +390,7 @@ moverFicha:
     add r8, [ubicacionZorro]
     mov byte[r8], 'X'
 
-    mClear
-    mPuts mapa
-    jmp fin
+    jmp main
 
     
 guardarValorRegistrosGenerales:
@@ -314,11 +427,8 @@ restaurarValorRegistrosGenerales:
     mov r15, [r15Aux]
     ret
 
-
 fin:
-    mPuts msgMovimientosDisponibles
-    mGets movimientoIngresado
-    jmp verficarEsMovimientoValido
+
 
     ret
 
