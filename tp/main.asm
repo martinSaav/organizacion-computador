@@ -156,6 +156,7 @@ section .data
     tamMsgMovimientoNoValido     dq 22
     msgSinMovimientos            db "No hay mas movimientos disponibles",10,0
     tamMsgSinMovimientos         dq 36
+    msgNoOcaEnPosicion           db "No hay una oca en la posicion ingresada",10,0
 
     turnoZorro                   dq 0
     turnoOcas                    dq 1
@@ -176,9 +177,10 @@ section .bss
     cantidadMovimientos resq 1
     turnoActual resq 1
     posicionOcaStr resq 1
-    posicionOca resq 1
     posicionMapaByte resq 1
-    posicionTablero resq 1
+    ;posicionTablero resq 1
+    ubicacionFicha resq 1
+    fichaActual resb 1
     raxAux resq 1
     rbxAux resq 1
     rcxAux resq 1
@@ -246,6 +248,12 @@ esTurnoZorro:
     mov rax, [turnoOcas]
     mov [siguienteTurno], rax
 
+    mov rax, [ubicacionZorro]
+    mov [ubicacionFicha], rax
+
+    mov rax, [zorro]
+    mov [fichaActual], rax
+
     jmp comienzoTurno
 
 esTurnoOcas:
@@ -288,11 +296,13 @@ esTurnoOcas:
     mov rax, [turnoZorro]
     mov [siguienteTurno], rax
 
+    mov rax, [oca]
+    mov [fichaActual], rax
+
     jmp comienzoTurno
 
 seleccionarOca:
     mGets posicionOcaStr
-    ;mSscanf posicionOcaStr, numFormato, posicionOca
 
     mov r11, [cantidadPosiciones]
     mov rax, 0
@@ -310,29 +320,35 @@ esPosicionValida:
     lea rsi, [posicionTableroStr]
     lea rdi, [posicionOcaStr]
     rep cmpsb
-    je continuarTurno
-
+    je hayOcaEnPosicion
     add rax,6
     dec r11
     jmp esPosicionValida
 
-    ;mov rcx, 3
-    ;lea rsi, [traduccionPosiciones]
-    ;lea rdi, [posicionMapaByteStr]
-    ;rep movsb
+hayOcaEnPosicion:
+    mov rcx, 3
+    lea rsi, [traduccionPosiciones]
+    add rsi, rax
+    lea rdi, [posicionMapaByteStr]
+    rep movsb
 
-    ;mSscanf posicionMapaByteStr, numFormato, posicionMapaByte
-    ;mSscanf posicionTableroStr, numFormato, posicionTablero
+    mSscanf posicionMapaByteStr, numFormato, posicionMapaByte
 
-
-
-    jmp continuarTurno
+    lea r8, [mapa]
+    add r8, [posicionMapaByte]
+    cmp byte[r8], 'O'
+    je posicionValida
+    jmp posicionNoValida
 
 posicionNoValida:
-    mPuts msgMovimientoNoValido
+    mPuts msgNoOcaEnPosicion
     jmp seleccionarOca
 
-
+posicionValida:
+    mov rax, [posicionMapaByte]
+    mov [ubicacionFicha], rax
+    jmp continuarTurno
+    
 comienzoTurno:
     mClear
     mPuts  mapa
@@ -347,7 +363,7 @@ continuarTurno:
     mov [indiceMovimiento], rsi
 
     lea r8, [mapa]
-    add r8, [ubicacionZorro]
+    add r8, [ubicacionFicha]
 verMovimientosDisponibles:
     mov ax, [movimientos + rsi*2]
     mov rbx, [movimientosValores + rsi*8]
@@ -406,7 +422,6 @@ agregarEspacio:
     jmp copiar
 
 verficarEsMovimientoValido:
-    ; primero verifico el tamaño del movimiento ingresado
     mov rsi, 0
     jmp tamMovIngresado
 verificarTamMovimientoIngresado:
@@ -444,15 +459,22 @@ movimientoNoValido:
 
 moverFicha:
     lea r8, [mapa]
-    add r8, [ubicacionZorro]
+    add r8, [ubicacionFicha]
     mov byte[r8], ' '
-    sub r8, [ubicacionZorro]
+    sub r8, [ubicacionFicha]
 
     mov rax, [movimientosValores + rsi*8]
-    add [ubicacionZorro], rax
-    add r8, [ubicacionZorro]
-    mov byte[r8], 'X'
+    add [ubicacionFicha], rax
+    add r8, [ubicacionFicha]
+    mov rax, [fichaActual]
+    mov byte[r8], al
 
+    mov rax, [turnoActual]
+    cmp rax, [turnoOcas]
+    je main
+
+    mov rax, [ubicacionFicha]
+    mov [ubicacionZorro], rax
     jmp main
 
     
