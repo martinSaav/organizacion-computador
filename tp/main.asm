@@ -97,24 +97,29 @@ section .data
     zorro                       db "X",0
     oca                         db "O",0
     vacio                       db " ",0
-    mapa                        db "                               ",10 ;32
-                                db "          | O | O | O |        ",10 ;64
-                                db "          | O | O | O |        ",10 ;96
-                                db "  | O | O | O | O | O | O | O |",10 ;128
-                                db "  | O |   |   |   |   |   | O |",10 ;160
-                                db "  | O |   |   | X |   |   | O |",10 ;192
-                                db "          |   |   |   |        ",10 ;224
-                                db "          |   |   |   |        ",10,0 ;256
-    ;estructura del tipo: posicion con respecto al mapa de bytes, contenido, posicion con respecto al mapa del juego
-    estructura                  db                   "044O",0,"048O",0,"052O",0
-                                db                   "076O",0,"080O",0,"084O",0
-                                db "100O",0,"104O",0,"108O",0,"112O",0,"116O",0,"120O",0,"124O",0
-                                db "132O",0,"136 ",0,"140 ",0,"144 ",0,"148 ",0,"152 ",0,"156O",0
-                                db "164O",0,"168 ",0,"172 ",0,"176X",0,"180 ",0,"184 ",0,"188O",0
-                                db                   "204 ",0,"208 ",0,"212 ",0
-                                db                   "236 ",0,"240 ",0,"244 ",0
+    mapa                        db "    1   2   3   4   5   6   7  ",10 ;32
+                                db "1         | O | O | O |        ",10 ;64
+                                db "2         | O | O | O |        ",10 ;96
+                                db "3 | O | O | O | O | O | O | O |",10 ;128
+                                db "4 | O |   |   |   |   |   | O |",10 ;160
+                                db "5 | O |   |   | X |   |   | O |",10 ;192
+                                db "6         |   |   |   |        ",10 ;224
+                                db "7         |   |   |   |        ",10,0 ;256
+    cantidadPosiciones          dq 33
+
+    posicionMapaByteStr         db "   ",0
+    posicionTableroStr          db "  ",0
+
+    ;estructura del tipo: posicion con respecto al mapa de bytes, posicion con respecto al tablero
+    traduccionPosiciones        db                     "04413",0,"04814",0,"05215",0
+                                db                     "07623",0,"08024",0,"08425",0
+                                db "10031",0,"10432",0,"10833",0,"11234",0,"11635",0,"12036",0,"12437",0
+                                db "13241",0,"13642",0,"14043",0,"14444",0,"14845",0,"15246",0,"15647",0
+                                db "16451",0,"16852",0,"17253",0,"17654",0,"18055",0,"18456",0,"18857",0
+                                db                     "20463",0,"20864",0,"21265",0
+                                db                     "23673",0,"24074",0,"24475",0,0
     cmdClear                     db "clear",0
-    ocasRestantesParaGanar       db 12
+    ocasRestantesParaGanar       dq 12
 
 
     msgTurnoZorro                 db "Turno del zorro",10
@@ -155,8 +160,9 @@ section .data
     turnoZorro                   dq 0
     turnoOcas                    dq 1
     siguienteTurno               dq 0
-
     ubicacionZorro               dq 176
+    numFormato                   db "%lld",0
+
 
 section .bss
     movimientoIngresado resb 256
@@ -164,11 +170,15 @@ section .bss
     msgTurno resb 256
     movimientos resb 256
     movimientosDisponibles resb 256
-    ;tamMovimientos resq 1
     posMovimientosDisponibles resq 8
     tamMovimientosDisponibles resq 8
     movimientosValores resq 8
     cantidadMovimientos resq 1
+    turnoActual resq 1
+    posicionOcaStr resq 1
+    posicionOca resq 1
+    posicionMapaByte resq 1
+    posicionTablero resq 1
     raxAux resq 1
     rbxAux resq 1
     rcxAux resq 1
@@ -197,6 +207,9 @@ main:
     jmp esTurnoOcas
 
 esTurnoZorro:
+    mov rax, [turnoZorro]
+    mov [turnoActual], rax
+
     mov rcx, [tamMsgTurnoZorro]
     lea rsi, [msgTurnoZorro]
     lea rdi, [msgTurno]
@@ -236,6 +249,9 @@ esTurnoZorro:
     jmp comienzoTurno
 
 esTurnoOcas:
+    mov rax, [turnoOcas]
+    mov [turnoActual], rax
+
     mov rcx, [tamMsgTurnoOcas]
     lea rsi, [msgTurnoOcas]
     lea rdi, [msgTurno]
@@ -274,15 +290,62 @@ esTurnoOcas:
 
     jmp comienzoTurno
 
+seleccionarOca:
+    mGets posicionOcaStr
+    ;mSscanf posicionOcaStr, numFormato, posicionOca
+
+    mov r11, [cantidadPosiciones]
+    mov rax, 0
+esPosicionValida:
+    cmp r11, 0
+    je posicionNoValida
+    mov rcx, 2
+    lea rsi, [traduccionPosiciones]
+    add rsi, rax
+    add rsi, 3
+    lea rdi, [posicionTableroStr]
+    rep movsb
+
+    mov rcx, 2
+    lea rsi, [posicionTableroStr]
+    lea rdi, [posicionOcaStr]
+    rep cmpsb
+    je continuarTurno
+
+    add rax,6
+    dec r11
+    jmp esPosicionValida
+
+    ;mov rcx, 3
+    ;lea rsi, [traduccionPosiciones]
+    ;lea rdi, [posicionMapaByteStr]
+    ;rep movsb
+
+    ;mSscanf posicionMapaByteStr, numFormato, posicionMapaByte
+    ;mSscanf posicionTableroStr, numFormato, posicionTablero
+
+
+
+    jmp continuarTurno
+
+posicionNoValida:
+    mPuts msgMovimientoNoValido
+    jmp seleccionarOca
+
 
 comienzoTurno:
     mClear
     mPuts  mapa
     mPuts  msgTurno
+    mov rax, [turnoActual]
+    cmp rax, [turnoOcas]
+    je seleccionarOca
+continuarTurno:
     mov rcx, [cantidadMovimientos]
     mov rax, 0
     mov rsi, 0
     mov [indiceMovimiento], rsi
+
     lea r8, [mapa]
     add r8, [ubicacionZorro]
 verMovimientosDisponibles:
