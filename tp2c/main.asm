@@ -143,8 +143,9 @@ section .data
 
 
     msgTurnoOficial                 db "Turno de los oficiales",10
-                                  db "Los movimientos de los oficiales son: norte(N), sur(S), este(E), oeste(O), noreste(NE), noroeste(NO), sureste(SE), suroeste(SO)",10,0
-    tamMsgTurnoOficial              dq 152
+                                  db "Los movimientos de los oficiales son: norte(N), sur(S), este(E), oeste(O), noreste(NE), noroeste(NO), sureste(SE), suroeste(SO)",10
+                                    db "Seleccione el oficial a mover: ",0
+    tamMsgTurnoOficial              dq 182
     movimientosOficial              db "N",0,"S",0,"E",0,"O",0,"NE",0,"NO",0,"SE",0,"SO",0,0
     movimientosOficialDisponibles   db " ",0," ",0," ",0," ",0,"  ",0,"  ",0,"  ",0,"  ",0,0
     tamMovimientosOficial           dq 21
@@ -176,7 +177,7 @@ section .data
     tamMsgMovimientoNoValido     dq 22
     msgSinMovimientos            db "No hay mas movimientos disponibles",10,0
     tamMsgSinMovimientos         dq 36
-    msgNoSoldadoEnPosicion           db "No hay un soldado en la posicion ingresada",10,0
+    msgNoFichaEnPosicion           db "No hay una ficha en la posicion ingresada",10,0
 
     turnoOficial                   dq 1
     turnoSoldados                    dq 0
@@ -196,7 +197,7 @@ section .bss
     movimientosValores resq 8
     cantidadMovimientos resq 1
     turnoActual resq 1
-    posicionSoldadoStr resq 1
+    posicionFichaIngresadaStr resq 1
     posicionMapaByte resq 1
     posicionActualMapaByte resq 1
     iterador resq 1
@@ -276,6 +277,7 @@ esTurnoOficial:
     mov rax, [ubicacionOficial]
     mov [ubicacionFicha], rax
 
+    xor rax, rax
     mov rax, [oficial]
     mov [fichaActual], rax
 
@@ -321,14 +323,19 @@ esTurnoSoldados:
     mov rax, [turnoOficial]
     mov [siguienteTurno], rax
 
+    xor rax, rax
     mov rax, [soldado]
     mov [fichaActual], rax
 
     jmp comienzoTurno
 
-seleccionarSoldado:
-    mGets posicionSoldadoStr
+seleccionarFicha:
+    mov rax, [turnoActual]
+    cmp rax, [turnoOficial]
 
+    mGets posicionFichaIngresadaStr
+    
+continuarSeleccionandoFicha:
     mov r11, [cantidadPosiciones] ; cantidad de posiciones en el tablero
     mov rax, 0
 esPosicionValida:
@@ -347,17 +354,17 @@ esPosicionValida:
 
     mov rcx, 2
     lea rsi, [posicionTableroStr]
-    lea rdi, [posicionSoldadoStr]
+    lea rdi, [posicionFichaIngresadaStr]
     rep cmpsb
     
-    je haySoldadoEnPosicion
+    je hayFichaEnPosicion
     add rax, 6 ; añado 6 para saltar a la siguiente posicion
     dec r11
     jmp esPosicionValida
 
-haySoldadoEnPosicion:
+hayFichaEnPosicion:
     mov rcx, 3
-    lea rsi, [traduccionPosiciones]
+    lea rsi, [traduccionPosiciones] 
     add rsi, rax
     lea rdi, [posicionMapaByteStr]
     rep movsb
@@ -366,13 +373,15 @@ haySoldadoEnPosicion:
 
     lea r8, [mapa]
     add r8, [posicionMapaByte]
-    cmp byte[r8], 'X'
+    xor rax, rax
+    mov al, [fichaActual]
+    cmp byte[r8], al
     je posicionValida
     jmp posicionNoValida
 
 posicionNoValida:
-    mPuts msgNoSoldadoEnPosicion
-    jmp seleccionarSoldado
+    mPuts msgNoFichaEnPosicion
+    jmp seleccionarFicha
 
 posicionValida:
     mov rax, [posicionMapaByte]
@@ -383,9 +392,8 @@ comienzoTurno:
     mClear
     mPuts  mapa
     mPuts  msgTurno
-    mov rax, [turnoActual]
-    cmp rax, [turnoSoldados]
-    je seleccionarSoldado
+
+    jmp seleccionarFicha
 continuarTurno:
     mov rcx, [cantidadMovimientos]
     mov rax, 0
