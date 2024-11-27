@@ -403,7 +403,8 @@ copiarMovimientoDisponible:
 
 copiarMovimientosDisponibles:
     lea rsi, [movimientosDisponibles]  
-    lea rdi, [movimientosDisponiblesPrint]        
+    lea rdi, [movimientosDisponiblesPrint]      
+      
 copiar:
     mov al, [rsi]
     cmp al, 0
@@ -424,11 +425,13 @@ agregarEspacio:
 verficarEsMovimientoValido:
     mov rsi, 0
     jmp tamMovIngresado
+
 verificarTamMovimientoIngresado:
     mov rax, [tamMovimientoIngresado]
     cmp rax, 2
     jg movimientoNoValido
     mov rsi, 0
+
 verificarIncluidoEnMovimientosDisponibles:
     mov r9, rsi
     mov rcx, [tamMovimientoIngresado]
