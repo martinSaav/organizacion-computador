@@ -156,9 +156,9 @@ section .data
 
 
     msgTurnoSoldados                  db "Turno de los soldados",10
-                                  db "Los movimientos de los soldados son: sur(S), sureste(SE), suroeste(SO)",10
+                                  db "Los movimientos de los soldados son: sur(S), sureste(SE), suroeste(SO) y en las posiciones 51, 52, 56, 57 admite este(E) y oeste(O)",10
                                   db "Seleccione el soldado a mover: ",0
-    tamMsgTurnoSoldados               dq 125
+    tamMsgTurnoSoldados               dq 185
     movimientosSoldados               db "S",0,"SE",0,"SO",0,0
     movimientosSoldadosDisponibles    db " ",0,"  ",0,"  ",0,0
     tamMovimientosSoldados            dq 9
@@ -182,14 +182,13 @@ section .data
     turnoOficial                   dq 1
     turnoSoldados                    dq 0
     siguienteTurno               dq 0
-    ubicacionOficial               dq 212
     numFormato                   db "%lld",0
 
 
 section .bss
     movimientoIngresado resb 256
     tamMovimientoIngresado resq 1
-    msgTurno resb 256
+    msgTurno resb 512
     movimientos resb 256
     movimientosDisponibles resb 256
     posMovimientosDisponibles resq 8
@@ -228,6 +227,11 @@ main:
     lea rdi, [movimientosDisponiblesPrint]
     mov rcx, 19
     mov al, ' '  
+    rep stosb
+    xor rax, rax
+    lea rdi, [msgTurno]
+    mov rcx, 512
+    mov al, ''
     rep stosb   
     mov rax, [turnoOficial]
     cmp rax, [siguienteTurno]
@@ -274,8 +278,6 @@ esTurnoOficial:
     mov rax, [turnoSoldados]
     mov [siguienteTurno], rax
 
-    mov rax, [ubicacionOficial]
-    mov [ubicacionFicha], rax
 
     xor rax, rax
     mov rax, [oficial]
@@ -577,12 +579,6 @@ moverFicha:
     mov rax, [fichaActual]
     mov byte[r8], al
 
-    mov rax, [turnoActual]
-    cmp rax, [turnoSoldados]
-    je main
-
-    mov rax, [ubicacionFicha]
-    mov [ubicacionOficial], rax
     jmp main
 
 
