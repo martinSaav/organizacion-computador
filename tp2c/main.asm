@@ -189,7 +189,7 @@ section .data
     msgSinMovimientos            db "No hay mas movimientos disponibles",10,0
     tamMsgSinMovimientos         dq 36
     msgNoFichaEnPosicion           db "No hay una ficha en la posicion ingresada",10,0
-    msgFichaSinMovimientos         db "La ficha seleccionada no tiene movimientos disponibles",10,0
+    msgFichaSinMovimientos         db "La ficha seleccionada no tiene movimientos disponibles, aprete ENTER para continuar",10,0
 
     turnoOficial                   dq 1
     turnoSoldados                    dq 0
@@ -222,6 +222,7 @@ section .bss
     fichasACapturar resq 1
     hayFichaParaCapturar resq 1
     cantidadMovimientosDisponibles resq 1
+    aux resb 512
     raxAux resq 1
     rbxAux resq 1
     rcxAux resq 1
@@ -467,6 +468,7 @@ continuarTurno:
     ; guardar el valor de r8 en una variable direccionFicha
     mov rax, 0
     mov [fichasACapturar], rax
+    mov [cantidadMovimientosDisponibles], rax
 
 verMovimientosDisponibles:
     mov r8, [direccionFicha]
@@ -488,9 +490,17 @@ verMovimientosDisponibles:
 
     jmp copiarMovimientosDisponibles
 continuar:
+    mov rax, [cantidadMovimientosDisponibles]
+    cmp rax, 0
+    je sinMovimientosDisponibles
     mPuts msgMovimientosDisponibles
     mGets movimientoIngresado
     jmp verficarEsMovimientoValido
+
+sinMovimientosDisponibles:
+    mPuts msgSinMovimientos
+    mGets aux ; para que el usuario pueda ver el mensaje
+    jmp comienzoTurno
 
 esMovimientoDisponible:
     mGuardarValorRegistrosGenerales
@@ -525,6 +535,10 @@ volverEsMovimientoDisponible:
     ret
 
 copiarMovimientoDisponible:
+    mov rax, [cantidadMovimientosDisponibles]
+    inc rax
+    mov [cantidadMovimientosDisponibles], rax
+
     mov rcx, [tamMovimientosDisponibles + rsi*8]
     mov rax, [posMovimientosDisponibles + rsi*8]
     lea rsi, [movimientos + rax]
