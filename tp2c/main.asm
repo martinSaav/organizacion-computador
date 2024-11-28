@@ -156,9 +156,10 @@ section .data
 
 
     msgTurnoSoldados                  db "Turno de los soldados",10
-                                  db "Los movimientos de los soldados son: sur(S), sureste(SE), suroeste(SO) y en las posiciones 51, 52, 56, 57 admite este(E) y oeste(O)",10
+                                  db "Los movimientos de los soldados son: sur(S), sureste(SE), suroeste(SO) y en las posiciones 51, 52, 56, 57 solo admite este(E) y oeste(O)",10
                                   db "Seleccione el soldado a mover: ",0
-    tamMsgTurnoSoldados               dq 185
+    tamMsgTurnoSoldados               dq 190
+
     movimientosSoldados               db "S",0,"SE",0,"SO",0,0
     movimientosSoldadosDisponibles    db " ",0,"  ",0,"  ",0,0
     tamMovimientosSoldados            dq 9
@@ -167,6 +168,16 @@ section .data
     movimientosSoldadosValores        dq 32, 36, 28
     cantidadMovimientosSoldados       dq 3
 
+    movimientosSoldadosEspeciales     db "E",0,"O",0,0
+    movimientosSoldadosEspecialesDisponibles    db " ",0," ",0,0
+    tamMovimientosSoldadosEspeciales            dq 5
+    posMovimientosSoldadosEspecialesDisponibles dq 0, 2
+    tamMovimientosSoldadosEspecialesDisponibles dq 1, 1
+    movimientosSoldadosEspecialesValores        dq 4, -4
+    cantidadMovimientosSoldadosEspeciales       dq 2
+
+    posicionesEspecialesDisponibles dq 164, 168, 184, 188
+    cantidadPosicionesEspeciales dq 4
 
     msgMovimientosDisponibles     db "Los movimientos disponibles son: "
     movimientosDisponiblesPrint   db "                   ",10
@@ -331,6 +342,38 @@ esTurnoSoldados:
 
     jmp comienzoTurno
 
+esTurnoSoldadoEspecial:
+
+    mov rcx, [tamMovimientosSoldadosEspeciales]
+    lea rsi, [movimientosSoldadosEspeciales]
+    lea rdi, [movimientos]
+    rep movsb
+
+    mov rcx, [tamMovimientosSoldadosEspeciales]
+    lea rsi, [movimientosSoldadosEspecialesDisponibles]
+    lea rdi, [movimientosDisponibles]
+    rep movsb
+
+    mov rcx, [cantidadMovimientosSoldadosEspeciales]
+    lea rsi, [posMovimientosSoldadosEspecialesDisponibles]
+    lea rdi, [posMovimientosDisponibles]
+    rep movsq
+
+    mov rcx, [cantidadMovimientosSoldadosEspeciales]
+    lea rsi, [tamMovimientosSoldadosEspecialesDisponibles]
+    lea rdi, [tamMovimientosDisponibles]
+    rep movsq
+
+    mov rcx, [cantidadMovimientosSoldadosEspeciales]
+    lea rsi, [movimientosSoldadosEspecialesValores]
+    lea rdi, [movimientosValores]
+    rep movsq
+
+    mov rax, [cantidadMovimientosSoldadosEspeciales]
+    mov [cantidadMovimientos], rax
+
+    jmp continuarTurno
+
 seleccionarFicha:
     mov rax, [turnoActual]
     cmp rax, [turnoOficial]
@@ -388,8 +431,20 @@ posicionNoValida:
 posicionValida:
     mov rax, [posicionMapaByte]
     mov [ubicacionFicha], rax
+    mov rax, [turnoActual]
+    cmp rax, [turnoOficial]
+    je continuarTurno
+    mov rcx, [cantidadPosicionesEspeciales]
+    mov rsi, 0
+esPosicionEspecial:
+    mov rax, [ubicacionFicha]
+    cmp rax, [posicionesEspecialesDisponibles + rsi*8]
+    je esTurnoSoldadoEspecial
+    inc rsi
+    loop esPosicionEspecial
+
     jmp continuarTurno
-    
+
 comienzoTurno:
     mClear
     mPuts  mapa
