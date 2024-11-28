@@ -189,6 +189,7 @@ section .data
     msgSinMovimientos            db "No hay mas movimientos disponibles",10,0
     tamMsgSinMovimientos         dq 36
     msgNoFichaEnPosicion           db "No hay una ficha en la posicion ingresada",10,0
+    msgFichaSinMovimientos         db "La ficha seleccionada no tiene movimientos disponibles",10,0
 
     turnoOficial                   dq 1
     turnoSoldados                    dq 0
@@ -220,6 +221,7 @@ section .bss
     posiblesFichasACapturar resq 1
     fichasACapturar resq 1
     hayFichaParaCapturar resq 1
+    cantidadMovimientosDisponibles resq 1
     raxAux resq 1
     rbxAux resq 1
     rcxAux resq 1
@@ -463,7 +465,8 @@ continuarTurno:
     add r8, [ubicacionFicha]
     mov [direccionFicha], r8
     ; guardar el valor de r8 en una variable direccionFicha
-
+    mov rax, 0
+    mov [fichasACapturar], rax
 
 verMovimientosDisponibles:
     mov r8, [direccionFicha]
@@ -474,7 +477,7 @@ verMovimientosDisponibles:
     add [posicionActualMapaByte], rbx
     lea rax, [mapa]
     sub [posicionActualMapaByte], rax
-    
+
     sub rsp, 8
     call esMovimientoDisponible
     add rsp, 8
@@ -615,6 +618,11 @@ verificarSiHayFichaParaCapturar:
 
     mov rax, 1
     mov [hayFichaParaCapturar], rax
+
+    mov rax, [fichasACapturar]
+    inc rax
+    mov [fichasACapturar], rax
+
     ret
 
 
@@ -695,8 +703,12 @@ moverFicha:
     cmp byte[r8], al
     je capturarFicha
     mov rax, [movimientosValores + rsi*8]
-    sub r8, rax 
-    jmp continuarMoverFicha
+    sub r8, rax
+    mov rax, [fichasACapturar]
+    cmp rax, 0
+    ; si el oficial no captura una ficha, se retira
+    je continuarMoverFicha
+    jmp main
 capturarFicha:
     mov byte[r8], ' '
     mov rax, [soldadosRestantesParaGanar]
