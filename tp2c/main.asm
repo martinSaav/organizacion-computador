@@ -217,6 +217,9 @@ section .bss
     direccionFicha resq 1
     movimientoActual resq 1
     fueraDeMapa resq 1
+    posiblesFichasACapturar resq 1
+    fichasACapturar resq 1
+    hayFichaParaCapturar resq 1
     raxAux resq 1
     rbxAux resq 1
     rcxAux resq 1
@@ -237,7 +240,7 @@ main:
     xor rax, rax
     lea rdi, [movimientosDisponiblesPrint]
     mov rcx, 19
-    mov al, ' '  
+    mov al, ''  
     rep stosb
     xor rax, rax
     lea rdi, [msgTurno]
@@ -343,7 +346,6 @@ esTurnoSoldados:
     jmp comienzoTurno
 
 esTurnoSoldadoEspecial:
-
     mov rcx, [tamMovimientosSoldadosEspeciales]
     lea rsi, [movimientosSoldadosEspeciales]
     lea rdi, [movimientos]
@@ -497,14 +499,22 @@ esMovimientoDisponible:
     cmp rax, 1
     je volverEsMovimientoDisponible
 
+    sub rsp, 8
+    call verificarSiHayFichaParaCapturar
+    add rsp, 8
+    mov rax, [hayFichaParaCapturar]
+    cmp rax, 1
+    je continuarEsMovimientoDisponible
+
     mov r8, [direccionFicha]
     mov rbx, [movimientoActual]
 
     mov rcx, 1
-    lea rsi, [r8+rbx] 
+    lea rsi, [r8 + rbx] 
     lea rdi, [vacio]
     repe cmpsb
-    
+
+continuarEsMovimientoDisponible:
     mov rsi, [indiceMovimiento]
     je copiarMovimientoDisponible
 volverEsMovimientoDisponible:
@@ -561,6 +571,54 @@ estaEnElMapaFin:
 noEstaEnElMapaFin:
     mov rax, 1
     mov [fueraDeMapa], rax
+    ret
+
+verificarSiHayFichaParaCapturar:
+    mov rax, 0
+    mov [hayFichaParaCapturar], rax
+    
+    mov rax, [turnoActual]
+    cmp rax, [turnoSoldados]
+    je finVerificarSiHayFichaParaCapturar
+
+    mov r8, [direccionFicha]
+    mov rbx, [movimientoActual]
+
+    mov rcx, 1
+    lea rsi, [r8 + rbx] 
+    lea rdi, [soldado]
+    repe cmpsb
+    jne finVerificarSiHayFichaParaCapturar
+
+    mov rbx, [movimientoActual]
+    mov rax, [posicionActualMapaByte]
+    add rax, rbx
+    mov [posicionActualMapaByte], rax
+
+    sub rsp, 8
+    call estaEnElMapa
+    add rsp, 8
+
+    mov rax, [fueraDeMapa]
+    cmp rax, 1
+    je finVerificarSiHayFichaParaCapturar
+
+    mov r8, [direccionFicha]
+    mov rbx, [movimientoActual]
+    imul rbx, rbx, 2
+
+    mov rcx, 1
+    lea rsi, [r8 + rbx] 
+    lea rdi, [vacio]
+    repe cmpsb
+    jne finVerificarSiHayFichaParaCapturar
+
+    mov rax, 1
+    mov [hayFichaParaCapturar], rax
+    ret
+
+
+finVerificarSiHayFichaParaCapturar:
     ret
 
 copiarMovimientosDisponibles:
@@ -626,12 +684,28 @@ moverFicha:
     lea r8, [mapa]
     add r8, [ubicacionFicha]
     mov byte[r8], ' '
-    sub r8, [ubicacionFicha]
 
+    mov rax, [turnoActual]
+    cmp rax, [turnoSoldados]
+    je continuarMoverFicha
     mov rax, [movimientosValores + rsi*8]
-    add [ubicacionFicha], rax
-    add r8, [ubicacionFicha]
-    mov rax, [fichaActual]
+    add r8, rax
+    xor rax, rax
+    mov al, [soldado]
+    cmp byte[r8], al
+    je capturarFicha
+    mov rax, [movimientosValores + rsi*8]
+    sub r8, rax 
+    jmp continuarMoverFicha
+capturarFicha:
+    mov byte[r8], ' '
+    mov rax, [soldadosRestantesParaGanar]
+    dec rax
+continuarMoverFicha:
+    mov rax, [movimientosValores + rsi*8]
+    add r8, rax
+    xor rax, rax
+    mov al, [fichaActual]
     mov byte[r8], al
 
     jmp main
