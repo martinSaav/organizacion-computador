@@ -139,7 +139,9 @@ section .data
                                 db                     "20463",0,"20864",0,"21265",0
                                 db                     "23673",0,"24074",0,"24475",0,0
     cmdClear                     db "clear",0
+    fortaleza dq 172, 176, 180, 204, 208, 212, 236, 240, 244
     soldadosRestantesParaGanar       dq 16
+    oficialesRestantesParaGanar      dq 2
 
 
     msgTurnoOficial                 db "Turno de los oficiales",10
@@ -240,6 +242,15 @@ section .bss
 section .text
     global main
 main:
+    mov rax, [oficialesRestantesParaGanar]
+    cmp rax, 0
+    je fin
+
+    mov rax, [soldadosRestantesParaGanar]
+    cmp rax, 0
+    je fin
+
+
     xor rax, rax
     lea rdi, [movimientosDisponiblesPrint]
     mov rcx, 19
@@ -489,10 +500,11 @@ verMovimientosDisponibles:
     loop verMovimientosDisponibles
 
     jmp copiarMovimientosDisponibles
-continuar:
+
     mov rax, [cantidadMovimientosDisponibles]
     cmp rax, 0
     je sinMovimientosDisponibles
+continuar:
     mPuts msgMovimientosDisponibles
     mGets movimientoIngresado
     jmp verficarEsMovimientoValido
@@ -722,11 +734,16 @@ moverFicha:
     cmp rax, 0
     ; si el oficial no captura una ficha, se retira
     je continuarMoverFicha
+    mov rax, [oficialesRestantesParaGanar]
+    dec rax
+    mov [oficialesRestantesParaGanar], rax ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    
     jmp main
 capturarFicha:
     mov byte[r8], ' '
     mov rax, [soldadosRestantesParaGanar]
     dec rax
+    mov [soldadosRestantesParaGanar], rax
 continuarMoverFicha:
     mov rax, [movimientosValores + rsi*8]
     add r8, rax
