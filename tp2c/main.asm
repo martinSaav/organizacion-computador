@@ -125,7 +125,6 @@ section .data
                                 db "5 | X | X |   |   |   | X | X |",10 ;192
                                 db "6         |   |   | O |        ",10 ;224
                                 db "7         | O |   |   |        ",10,0 ;256                                
-    cantidadPosiciones          dq 33
 
     posicionMapaByteStr         db "   ",0
     posicionTableroStr          db "  ",0
@@ -138,11 +137,13 @@ section .data
                                 db "16451",0,"16852",0,"17253",0,"17654",0,"18055",0,"18456",0,"18857",0
                                 db                     "20463",0,"20864",0,"21265",0
                                 db                     "23673",0,"24074",0,"24475",0,0
+    cantidadPosiciones          dq 33                            
     cmdClear                     db "clear",0
     fortalezaPosiciones dq 172, 176, 180, 204, 208, 212, 236, 240, 244
     cantidadFortalezaPosiciones dq 9
     soldadosRestantesParaGanar       dq 16
     oficialesRestantesParaGanar      dq 2
+    
 
 
     msgTurnoOficial                 db "Turno de los oficiales",10
@@ -224,6 +225,9 @@ section .bss
     fichasACapturar resq 1
     hayFichaParaCapturar resq 1
     cantidadMovimientosDisponibles resq 1
+    posicionOficiales resq 2
+    cantidadOficiales resq 1
+    oficialesBloqueados resq 1
     aux resb 512
     raxAux resq 1
     rbxAux resq 1
@@ -250,9 +254,60 @@ main:
     cmp rax, 0
     je fin
 
+    ; encontrar posicion de los oficiales
+    
+    mov rax, [cantidadPosiciones] ; cantidad de posiciones en el tablero = 33
+    mov [iterador], rax
+    mov rax, 0
+    mov [posicion], rax
+    mov [cantidadOficiales], rax
+encontrarOficiales:
+    mov rax, [iterador]
+    cmp rax, 0
+    je finEncontrarOficiales
+
+    mov rcx, 3
+    lea rsi, [traduccionPosiciones]
+    mov rax, [posicion]
+    add rsi, rax  ; "04413 0 04814"
+                  ;   1234 5 6      6 bytes son los que necesito para saltar a la siguiente posicion
+    lea rdi, [posicionMapaByteStr]
+    rep movsb
+    
+    mSscanf posicionMapaByteStr, numFormato, posicionMapaByte
+    lea r8, [mapa]
+    mov rax, [posicionMapaByte]
+    add r8, rax
+    xor rax, rax
+    mov al, [oficial]
+    cmp byte[r8], al
+    je copiarPosicionOficial
+continuarEncontrarOficiales:
+    mov rax, [posicion]
+    add rax, 6 ; añado 6 para saltar a la siguiente posicion
+    mov [posicion], rax
+
+    mov rax, [iterador]
+    dec rax
+    mov [iterador], rax
+    jmp encontrarOficiales
+
+copiarPosicionOficial:
+    mov rax, [posicionMapaByte]
+    mov rsi, [cantidadOficiales]
+    mov [posicionOficiales + rsi*8], rax
+    inc rsi
+    mov [cantidadOficiales], rsi
+    jmp continuarEncontrarOficiales
+
+finEncontrarOficiales:
+
+
+    ; verificar si la fortaleza esta invadida
     lea r8, [mapa]
     mov rcx, [cantidadFortalezaPosiciones]
     mov rsi, 0
+
 estaFortalezaInvadida:
     mov rbx, [fortalezaPosiciones + rsi*8]
     add r8, rbx
