@@ -124,7 +124,7 @@ section .data
                                 db "4 | X | X | X | X | X | X | X |",10 ;160
                                 db "5 | X | X |   |   |   | X | X |",10 ;192
                                 db "6         |   |   | O |        ",10 ;224
-                                db "7         | O |   |   |        ",10,0 ;256
+                                db "7         | O |   |   |        ",10,0 ;256                                
     cantidadPosiciones          dq 33
 
     posicionMapaByteStr         db "   ",0
@@ -139,7 +139,8 @@ section .data
                                 db                     "20463",0,"20864",0,"21265",0
                                 db                     "23673",0,"24074",0,"24475",0,0
     cmdClear                     db "clear",0
-    fortaleza dq 172, 176, 180, 204, 208, 212, 236, 240, 244
+    fortalezaPosiciones dq 172, 176, 180, 204, 208, 212, 236, 240, 244
+    cantidadFortalezaPosiciones dq 9
     soldadosRestantesParaGanar       dq 16
     oficialesRestantesParaGanar      dq 2
 
@@ -188,7 +189,6 @@ section .data
     indiceMovimiento             dq 0
     msgMovimientoNoValido        db "Movimiento no valido",10,0
     tamMsgMovimientoNoValido     dq 22
-    msgSinMovimientos            db "No hay mas movimientos disponibles",10,0
     tamMsgSinMovimientos         dq 36
     msgNoFichaEnPosicion           db "No hay una ficha en la posicion ingresada",10,0
     msgFichaSinMovimientos         db "La ficha seleccionada no tiene movimientos disponibles, aprete ENTER para continuar",10,0
@@ -250,7 +250,22 @@ main:
     cmp rax, 0
     je fin
 
+    lea r8, [mapa]
+    mov rcx, [cantidadFortalezaPosiciones]
+    mov rsi, 0
+estaFortalezaInvadida:
+    mov rbx, [fortalezaPosiciones + rsi*8]
+    add r8, rbx
+    xor rax, rax
+    mov al, [soldado]
+    cmp byte[r8], al
+    jne fortalezaNoInvadida
+    inc rsi
+    sub r8, rbx
+    loop estaFortalezaInvadida
+    jmp fin
 
+fortalezaNoInvadida:
     xor rax, rax
     lea rdi, [movimientosDisponiblesPrint]
     mov rcx, 19
@@ -499,18 +514,19 @@ verMovimientosDisponibles:
     mov [indiceMovimiento], rsi
     loop verMovimientosDisponibles
 
-    jmp copiarMovimientosDisponibles
 
     mov rax, [cantidadMovimientosDisponibles]
     cmp rax, 0
     je sinMovimientosDisponibles
+    jmp copiarMovimientosDisponibles
+
 continuar:
     mPuts msgMovimientosDisponibles
     mGets movimientoIngresado
     jmp verficarEsMovimientoValido
 
 sinMovimientosDisponibles:
-    mPuts msgSinMovimientos
+    mPuts msgFichaSinMovimientos
     mGets aux ; para que el usuario pueda ver el mensaje
     jmp comienzoTurno
 
