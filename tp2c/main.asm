@@ -141,8 +141,8 @@ section .data
     cmdClear                     db "clear",0
     fortalezaPosiciones dq 172, 176, 180, 204, 208, 212, 236, 240, 244
     cantidadFortalezaPosiciones dq 9
-    soldadosRestantesParaGanar       dq 16
-    oficialesRestantesParaGanar      dq 2
+    soldadosRestantesParaFinalizar       dq 16
+    oficialesRestantesParaFinalizar      dq 2
     
 
 
@@ -193,6 +193,19 @@ section .data
     tamMsgSinMovimientos         dq 36
     msgNoFichaEnPosicion           db "No hay una ficha en la posicion ingresada",10,0
     msgFichaSinMovimientos         db "La ficha seleccionada no tiene movimientos disponibles, aprete ENTER para continuar",10,0
+    
+    msgFinJuegoSinOficiales        db "Los oficiales han sido eliminados, los soldados ganan",10,0
+    msgFinJuegoSinSoldadosSuficientes         db "Los soldados restantes no son suficientes para ganar, los oficiales ganan",10,0
+    msgFinJuegoCapturanFortaleza        db "Los soldados han ocupado la fortaleza, los soldados ganan",10,0
+    msgFinJuegoOficialesBloqueados      db "Los oficiales estan bloqueados, los soldados ganan",10,0
+    tamMsgFinJuegoSinOficiales        dq 55
+    tamMsgFinJuegoSinSoldadosSuficientes dq 75
+    tamMsgFinJuegoCapturanFortaleza    dq 59
+    tamMsgFinJuegoOficialesBloqueados  dq 52
+    codigoSinOficiales                 dq 1
+    codigoSinSoldadosSuficientes       dq 2
+    codigoCapturanFortaleza            dq 3
+    codigoOficialesBloqueados          dq 4
 
     turnoOficial                   dq 1
     turnoSoldados                    dq 0
@@ -216,6 +229,8 @@ section .bss
     posicionActualMapaByte resq 1
     iterador resq 1
     posicion resq 1
+    iteradorJ resq 1
+    posicionJ resq 1
     ubicacionFicha resq 1
     fichaActual resb 1
     direccionFicha resq 1
@@ -228,6 +243,8 @@ section .bss
     posicionOficiales resq 2
     cantidadOficiales resq 1
     oficialesBloqueados resq 1
+    codigoFinalizacion resq 1
+    msgFinalizacion resb 512
     aux resb 512
     raxAux resq 1
     rbxAux resq 1
@@ -246,14 +263,23 @@ section .bss
 section .text
     global main
 main:
-    mov rax, [oficialesRestantesParaGanar]
+    mov rax, [oficialesRestantesParaFinalizar]
     cmp rax, 0
-    je fin
+    jne finSinOficiales
+    mov rax, [codigoSinOficiales]
+    mov [codigoFinalizacion], rax
+    jmp fin
 
-    mov rax, [soldadosRestantesParaGanar]
+finSinOficiales:
+
+    mov rax, [soldadosRestantesParaFinalizar]
     cmp rax, 0
-    je fin
+    jne finSoldadosSuficientes
+    mov rax, [codigoSinSoldadosSuficientes]
+    mov [codigoFinalizacion], rax
+    jmp fin
 
+finSoldadosSuficientes:
     ; encontrar posicion de los oficiales
     
     mov rax, [cantidadPosiciones] ; cantidad de posiciones en el tablero = 33
@@ -301,7 +327,107 @@ copiarPosicionOficial:
     jmp continuarEncontrarOficiales
 
 finEncontrarOficiales:
+    mov rax, [turnoOficial] ;;;;;; Esto es para ver todos los movimientos posibles de los oficiales
+    mov [turnoActual], rax
 
+    mov rcx, [tamMovimientosOficial]
+    lea rsi, [movimientosOficial]
+    lea rdi, [movimientos]
+    rep movsb
+
+    mov rcx, [tamMovimientosOficial]
+    lea rsi, [movimientosOficialDisponibles]
+    lea rdi, [movimientosDisponibles]
+    rep movsb
+
+    mov rcx, [cantidadMovimientosOficial]
+    lea rsi, [posMovimientosOficialDisponibles]
+    lea rdi, [posMovimientosDisponibles]
+    rep movsq
+
+    mov rcx, [cantidadMovimientosOficial]
+    lea rsi, [tamMovimientosOficialDisponibles]
+    lea rdi, [tamMovimientosDisponibles]
+    rep movsq
+
+    mov rcx, [cantidadMovimientosOficial]
+    lea rsi, [movimientosOficialValores]
+    lea rdi, [movimientosValores]
+    rep movsq
+
+    mov rax, [cantidadMovimientosOficial]
+    mov [cantidadMovimientos], rax
+; verificar si los oficiales estan bloqueados
+    mov rax, [cantidadOficiales]
+    mov [iteradorJ], rax
+
+    mov rax, 0
+    mov [oficialesBloqueados], rax
+    mov [posicionJ], rax
+estanLosOficialesBloqueados:
+    mov rax, [iteradorJ]
+    cmp rax, 0
+    je finEstanLosOficialesBloqueados
+
+    mov rsi, [posicionJ]
+    mov rax, [posicionOficiales + rsi*8]
+    mov [ubicacionFicha], rax
+
+    mov rcx, [cantidadMovimientos]
+    mov rsi, 0
+    mov [indiceMovimiento], rsi
+
+    lea r8, [mapa]
+    add r8, [ubicacionFicha]
+    mov [direccionFicha], r8
+
+    mov rax, 0
+    mov [fichasACapturar], rax
+    mov [cantidadMovimientosDisponibles], rax
+
+verMovimientosDisponiblesOficiales:
+    mov r8, [direccionFicha]
+    mov rbx, [movimientosValores + rsi*8]
+    mov [movimientoActual], rbx
+
+    mov [posicionActualMapaByte], r8
+    add [posicionActualMapaByte], rbx
+    lea rax, [mapa]
+    sub [posicionActualMapaByte], rax
+
+    sub rsp, 8
+    call esMovimientoDisponible
+    add rsp, 8
+
+    inc rsi
+    mov [indiceMovimiento], rsi
+    loop verMovimientosDisponiblesOficiales
+
+    mov rax, [cantidadMovimientosDisponibles]
+    cmp rax, 0
+    je oficialBloqueado
+avanzarIterador:
+    mov rax, [iteradorJ]
+    dec rax
+    mov [iteradorJ], rax
+    mov rax, [posicionJ]
+    inc rax
+    mov [posicionJ], rax
+    jmp estanLosOficialesBloqueados
+
+oficialBloqueado:
+    mov rax, [oficialesBloqueados]
+    inc rax
+    mov [oficialesBloqueados], rax
+
+    jmp avanzarIterador
+
+finEstanLosOficialesBloqueados:
+    mov rax, [oficialesBloqueados]
+    cmp rax, 2
+    mov rax, [codigoOficialesBloqueados]
+    mov [codigoFinalizacion], rax
+    je fin
 
     ; verificar si la fortaleza esta invadida
     lea r8, [mapa]
@@ -318,6 +444,8 @@ estaFortalezaInvadida:
     inc rsi
     sub r8, rbx
     loop estaFortalezaInvadida
+    mov rax, [codigoCapturanFortaleza]
+    mov [codigoFinalizacion], rax
     jmp fin
 
 fortalezaNoInvadida:
@@ -805,16 +933,16 @@ moverFicha:
     cmp rax, 0
     ; si el oficial no captura una ficha, se retira
     je continuarMoverFicha
-    mov rax, [oficialesRestantesParaGanar]
+    mov rax, [oficialesRestantesParaFinalizar]
     dec rax
-    mov [oficialesRestantesParaGanar], rax ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    mov [oficialesRestantesParaFinalizar], rax 
     
     jmp main
 capturarFicha:
     mov byte[r8], ' '
-    mov rax, [soldadosRestantesParaGanar]
+    mov rax, [soldadosRestantesParaFinalizar]
     dec rax
-    mov [soldadosRestantesParaGanar], rax
+    mov [soldadosRestantesParaFinalizar], rax
 continuarMoverFicha:
     mov rax, [movimientosValores + rsi*8]
     add r8, rax
@@ -862,8 +990,35 @@ restaurarValorRegistrosGenerales:
     ret
 
 fin:
+    mClear
+    mPuts  mapa
+    mov rax, [codigoFinalizacion]
+    cmp rax, [codigoSinOficiales]
+    je finalSinOficiales
 
+    cmp rax, [codigoSinSoldadosSuficientes]
+    je finalSinSoldadosSuficientes
 
+    cmp rax, [codigoCapturanFortaleza]
+    je finalCapturanFortaleza
+
+    cmp rax, [codigoOficialesBloqueados]
+    je finalOficialesBloqueados
+
+finalSinOficiales:
+    mPuts msgFinJuegoSinOficiales
+    ret 
+
+finalSinSoldadosSuficientes:
+    mPuts msgFinJuegoSinSoldadosSuficientes
+    ret
+
+finalCapturanFortaleza:
+    mPuts msgFinJuegoCapturanFortaleza
+    ret
+
+finalOficialesBloqueados:
+    mPuts msgFinJuegoOficialesBloqueados
     ret
 
 
