@@ -66,6 +66,10 @@
     sub     rsp,8
     call    gets  
     add     rsp,8
+    xor     rax,rax
+    mov     al, byte[%1]
+    cmp     al, byte[caracterSalir]
+    je      salirJuego
 %endmacro
 
 %macro mSscanf 3
@@ -117,6 +121,10 @@ section .data
     oficial                       db "O",0
     soldado                     db "X",0
     vacio                       db " ",0
+    caracterSalir               db "s"
+    textoArriba                 db "    Juego de El Asalto    ",10
+                                db "    ------------------    ",10,10,10
+                                db "Ingrese 's' para salir",10,0
     mapa                        db "    1   2   3   4   5   6   7  ",10 ;32
                                 db "1         | X | X | X |        ",10 ;64
                                 db "2         | X | X | X |        ",10 ;96
@@ -211,7 +219,7 @@ section .data
     turnoSoldados                    dq 0
     siguienteTurno               dq 0
     numFormato                   db "%lld",0
-
+    msgFinCaracter                   db "Juego finalizado por el jugador", 0
 
 section .bss
     movimientoIngresado resb 256
@@ -661,6 +669,7 @@ esPosicionEspecial:
 
 comienzoTurno:
     mClear
+    mPuts textoArriba
     mPuts  mapa
     mPuts  msgTurno
 
@@ -1021,6 +1030,12 @@ finalOficialesBloqueados:
     mPuts msgFinJuegoOficialesBloqueados
     ret
 
+
+salirJuego:
+    mClear
+    mPuts mapa
+    mPuts msgFinCaracter
+    ret
 
 
 
